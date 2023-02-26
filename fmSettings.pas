@@ -1,6 +1,6 @@
 unit fmSettings;
 
-{$INCLUDE CompilerOptions.inc}
+{$INCLUDE XCompilerOptions.inc}
 
 interface
 

@@ -173,6 +173,10 @@ inherited SettingsForm: TSettingsForm
       object pgSrcArea: TcxTabSheet
         Caption = #1054#1073#1083#1072#1089#1090#1100' '#1080#1089#1093#1086#1076#1085#1086#1075#1086' '#1082#1086#1076#1072
         ImageIndex = 1
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
         object lblFont: TLabel
           Left = 8
           Top = 3
