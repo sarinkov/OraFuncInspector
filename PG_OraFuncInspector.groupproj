@@ -1,0 +1,36 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{ADF929E4-0033-45B3-B4E0-B6671133D4BB}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="OraFuncInspector.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="OraFuncInspector">
+        <MSBuild Projects="OraFuncInspector.dproj"/>
+    </Target>
+    <Target Name="OraFuncInspector:Clean">
+        <MSBuild Projects="OraFuncInspector.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="OraFuncInspector:Make">
+        <MSBuild Projects="OraFuncInspector.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="OraFuncInspector"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="OraFuncInspector:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="OraFuncInspector:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>
