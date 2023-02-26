@@ -53,8 +53,6 @@ begin
 end;
 
 procedure LoadComboBox(R: TRegistry; Combo: TcxComboBox; ComboName: string);
-var
-  i: Integer;
 begin
   if ComboName = '' then
     ComboName := Combo.Name;

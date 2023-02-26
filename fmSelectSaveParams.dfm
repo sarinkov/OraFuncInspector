@@ -1,14 +1,14 @@
 inherited SelectSaveParamsForm: TSelectSaveParamsForm
   ActiveControl = dtrDirTree
   Caption = #1057#1086#1093#1088#1072#1085#1077#1085#1080#1077' '#1074#1099#1073#1088#1072#1085#1085#1099#1093
-  ClientHeight = 584
+  ClientHeight = 654
   ClientWidth = 415
   ExplicitWidth = 421
-  ExplicitHeight = 613
+  ExplicitHeight = 683
   PixelsPerInch = 96
   TextHeight = 16
   inherited bvlButtonsBevel: TdxBevel
-    Top = 550
+    Top = 620
     Width = 415
     Height = 13
     ExplicitTop = 539
@@ -17,38 +17,49 @@ inherited SelectSaveParamsForm: TSelectSaveParamsForm
   end
   inherited pnlMain: TPanel
     Width = 415
-    Height = 369
+    Height = 439
     ExplicitWidth = 415
-    ExplicitHeight = 369
-    object dtrDirTree: TRzDirectoryTree
+    ExplicitHeight = 439
+    object gbxDirTree: TcxGroupBox
       AlignWithMargins = True
-      Left = 8
-      Top = 8
-      HideSelection = False
-      Indent = 19
-      SelectionPen.Color = clBtnShadow
+      Left = 3
+      Top = 10
+      Caption = #1050#1072#1090#1072#1083#1086#1075
       TabOrder = 0
-      OnChange = dtrDirTreeChange
+      Height = 177
+      Width = 267
+      object dtrDirTree: TRzDirectoryTree
+        Left = 2
+        Top = 18
+        Width = 263
+        Height = 151
+        Align = alClient
+        HideSelection = False
+        Indent = 19
+        SelectionPen.Color = clBtnShadow
+        TabOrder = 0
+        OnChange = dtrDirTreeChange
+      end
     end
   end
   inherited btnOk: TcxButton
     Left = 241
-    Top = 556
+    Top = 626
     TabOrder = 2
     ExplicitLeft = 241
-    ExplicitTop = 556
+    ExplicitTop = 626
   end
   inherited btnCancel: TcxButton
     Left = 327
-    Top = 556
+    Top = 626
     TabOrder = 3
     ExplicitLeft = 327
-    ExplicitTop = 556
+    ExplicitTop = 626
   end
   object gbxSaveOptions: TcxGroupBox
     AlignWithMargins = True
     Left = 3
-    Top = 372
+    Top = 442
     Align = alTop
     Caption = #1054#1087#1094#1080#1080
     TabOrder = 1
