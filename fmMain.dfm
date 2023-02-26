@@ -52,8 +52,8 @@ inherited MainForm: TMainForm
         Margins.Bottom = 1
         Align = alClient
         Properties.BeginColor = 54056
-        Properties.ShowTextStyle = cxtsText
         TabOrder = 0
+        ExplicitLeft = -1
         Width = 686
       end
     end
@@ -107,6 +107,7 @@ inherited MainForm: TMainForm
         Top = 32
         TabOrder = 0
         Text = 'cbxOwner'
+        OnKeyPress = SearchOnEnter
         Width = 153
       end
       object cbxText: TcxComboBox
@@ -114,6 +115,7 @@ inherited MainForm: TMainForm
         Top = 32
         TabOrder = 1
         Text = 'cbxText'
+        OnKeyPress = SearchOnEnter
         Width = 431
       end
       object chbPackages: TcxCheckBox
@@ -337,7 +339,7 @@ inherited MainForm: TMainForm
           Font.Style = []
           ParentFont = False
           TabOrder = 0
-          Properties.ActivePage = tsBody
+          Properties.ActivePage = tsSpec
           Properties.CustomButtons.Buttons = <>
           ClientRectBottom = 107
           ClientRectLeft = 2
@@ -346,6 +348,10 @@ inherited MainForm: TMainForm
           object tsSpec: TcxTabSheet
             Caption = 'Spec'
             ImageIndex = 0
+            ExplicitLeft = 0
+            ExplicitTop = 0
+            ExplicitWidth = 0
+            ExplicitHeight = 0
             object mmoSpec: TSynMemo
               Left = 8
               Top = 8
@@ -375,12 +381,17 @@ inherited MainForm: TMainForm
                 'mmoSpec')
               ReadOnly = True
               SearchEngine = serSource
+              OnPaintTransient = MemoPaint
               FontSmoothing = fsmNone
             end
           end
           object tsBody: TcxTabSheet
             Caption = 'Body'
             ImageIndex = 1
+            ExplicitLeft = 0
+            ExplicitTop = 0
+            ExplicitWidth = 0
+            ExplicitHeight = 0
             object mmoBody: TSynMemo
               Left = 12
               Top = 16
@@ -410,6 +421,7 @@ inherited MainForm: TMainForm
                 'mmoBody')
               ReadOnly = True
               SearchEngine = serSource
+              OnPaintTransient = MemoPaint
               FontSmoothing = fsmNone
             end
           end
@@ -443,6 +455,7 @@ inherited MainForm: TMainForm
             'mmoSource')
           ReadOnly = True
           SearchEngine = serSource
+          OnPaintTransient = MemoPaint
           FontSmoothing = fsmNone
         end
         object pnlSearch: TPanel
@@ -459,9 +472,9 @@ inherited MainForm: TMainForm
   end
   object pnlProgressBar: TPanel
     Left = 0
-    Top = 387
+    Top = 386
     Width = 1084
-    Height = 32
+    Height = 33
     Align = alBottom
     BevelOuter = bvNone
     Font.Charset = DEFAULT_CHARSET
@@ -476,8 +489,8 @@ inherited MainForm: TMainForm
       Left = 3
       Top = 3
       Align = alClient
-      Properties.ShowTextStyle = cxtsText
       TabOrder = 0
+      ExplicitLeft = 0
       Width = 1078
     end
   end

@@ -99,7 +99,11 @@ type
     procedure actExternalEditExecute(Sender: TObject);
     procedure ActMgrUpdate(Action: TBasicAction; var Handled: Boolean);
     procedure btnClearTextListClick(Sender: TObject);
+    procedure MemoPaint(Sender: TObject; Canvas: TCanvas; TransientType: TTransientType);
+    procedure SearchOnEnter(Sender: TObject; var Key: Char);
   private
+    FTextForSearch: string;
+
     function  GetText: string;
     function  GetOwnerName: string;
     function  GetRecordCount: Integer;
@@ -118,16 +122,18 @@ type
     procedure DoRefresh;
     procedure DoSaveItemsToDisk;
     procedure SaveSource(const AOwner, AName, AType: string);
+    procedure SourceToFile(const FileName: string; const AOwner, AName, AType: string);
     procedure DoExternalEdit;
     procedure DoSettings;
     procedure SourceToStrings(const AOwner, AName, AType: string; Lines: TStrings; ClearLines: Boolean = True);
     procedure ShowSource(const AOwner, AName, AType: string);
-    function GetSelectedCount: Integer;
+    function  GetSelectedCount: Integer;
   public
     procedure InitForm; override;
     procedure SaveToRegistry(R: TRegistry); override;
     procedure LoadFromRegistry(R: TRegistry); override;
 
+    property  TextForSearch: string read FTextForSearch write FTextForSearch;
     property  Text: string read GetText;
     property  OwnerName: string read GetOwnerName;
     property  CurOwner: string read GetCurOwner;
@@ -146,7 +152,8 @@ implementation
 {$R *.dfm}
 
 uses
-  System.Math, XHelpers, XUtils, XStrUtils, dmMain, fmLogin, fmSelectSaveParams, fmSettings, unConsts, unGlobals;
+  Winapi.ShlObj, Winapi.ShellAPI, System.Math, SynEditTypes,
+  XHelpers, XUtils, XStrUtils, dmMain, fmLogin, fmSelectSaveParams, fmSettings, unConsts, unGlobals;
 
 const
   MAX_TEXT_ITEMS     = 25;
@@ -171,8 +178,8 @@ end;
 procedure TMainForm.ActMgrUpdate(Action: TBasicAction; var Handled: Boolean);
 begin
   inherited;
-  actSaveItemsToDisk.Enabled := SelectedCount > 0;
-  actExternalEdit.Enabled    := (mmoSpec.Text <> '') or (mmoSource.Text <> '');
+  actSaveItemsToDisk.Enabled := qryMain.Active and (SelectedCount > 0);
+  actExternalEdit.Enabled    := actSaveItemsToDisk.Enabled and ((mmoSpec.Text <> '') or (mmoSource.Text <> ''));
 end;
 
 procedure TMainForm.actRefresh(Sender: TObject);
@@ -195,6 +202,15 @@ procedure TMainForm.btnClearTextListClick(Sender: TObject);
 begin
   inherited;
   cbxText.Properties.Items.Clear;
+end;
+
+procedure TMainForm.SearchOnEnter(Sender: TObject; var Key: Char);
+begin
+  inherited;
+  if Key = #13 then begin
+    actSearch.Execute;
+    Key := #0;
+  end;
 end;
 
 procedure TMainForm.DoSettings;
@@ -242,6 +258,8 @@ begin
   mmoSource.Text         := '';
   mmoSource.Align        := alClient;
   mmoSource.Visible      := False;
+
+  FTextForSearch         := '';
 
   HideProgressBar;
   with StatusBar do begin
@@ -327,6 +345,7 @@ end;
 procedure TMainForm.DoRefresh;
 begin
   TextToDropDownList(Text);
+  FTextForSearch := Text;
 
   with qryMain do begin
     DisableControls;
@@ -357,7 +376,26 @@ begin
 end;
 
 procedure TMainForm.DoExternalEdit;
+
+  function  GetTempDir: string;
+  var
+    Path: array [0..255] of char;
+  begin
+    SHGetSpecialFolderPath(0, @Path[0], CSIDL_PERSONAL, False);
+    Result := IncludeTrailingPathDelimiter(Path);
+  end;
+
+var
+  FileName: string;
 begin
+  if AppSettings.EditorPath = '' then begin
+    MsgBox('Не указан редактор', 'В настройках не указан внешний редактор.', MB_ICONSTOP + MB_OK);
+    Exit;
+  end;
+
+  FileName := GetTempDir + Format('%s.%s.sql', [CurOwner, CurName]);
+  SourceToFile(FileName, CurOwner, CurName, CurType);
+  ShellExecute(Handle, 'open', PChar('"' + AppSettings.EditorPath + '"'), PChar('"' + FileName + '"'), nil, SW_SHOWNORMAL);
 end;
 
 procedure TMainForm.DoSaveItemsToDisk;
@@ -407,7 +445,12 @@ begin
 
           with prbStPB do begin
             Position        := Position + 1;
+            {
             Properties.Text := Format('%s.%s (%d%%)', [AOwner, AName, Trunc((i + 1) * 100 / SelCount)]);
+            }
+          end;
+          with prbPB do begin
+              Position        := Position + 1;
           end;
         end;
       end;
@@ -429,17 +472,8 @@ procedure TMainForm.SaveSource(const AOwner, AName, AType: string);
       else Result := ForceDirectories(Name);
   end;
 
-  procedure PreprocessLines(L: TStrings);
-  var
-    i: Integer;
-  begin
-    for i := 0 to L.Count - 1 do
-      L[i] := StringReplace(L[i], #$A, '', [rfReplaceAll]);
-  end;
-
 var
   Current: string;
-  Lines  : TStrings;
 begin
   // Каталог
   with AppSettings.SaveOptions do begin
@@ -460,18 +494,8 @@ begin
       Current := Current + '.' + StringReplace(AType, #32, '_', [rfReplaceAll]);
     Current := Current + '.' + Ext;
   end;
-  Lines := TStringList.Create;
-  try
-    SourceToStrings(AOwner, AName, AType, Lines);
-    if (AType = S_PACKAGE) or (AType = S_TYPE) then begin
-      Lines.Add('/');
-      SourceToStrings(AOwner, AName, AType + ' BODY', Lines, False);
-    end;
-    PreprocessLines(Lines);
-    Lines.SaveToFile(Current);
-  finally
-    FreeAndNil(Lines);
-  end;
+
+  SourceToFile(Current, AOwner, AName, AType);
 end;
 
 procedure TMainForm.SaveToRegistry(R: TRegistry);
@@ -563,6 +587,52 @@ begin
   LoadSourceParams;
 end;
 
+procedure TMainForm.MemoPaint(Sender: TObject; Canvas: TCanvas; TransientType: TTransientType);
+var
+  Memo      : TSynMemo;
+  Key, S, T : string;
+  i, k      : Integer;
+  dc        : TDisplayCoord;
+  p         : TPoint;
+  R         : TRect;
+begin
+  if not (Sender is TSynMemo)
+    then Exit
+    else Memo := Sender as TSynMemo;
+  if Trim(FTextForSearch) = ''
+    then Exit
+    else Key  := LowerCase(FTextForSearch);
+
+  for i := Memo.TopLine to Memo.TopLine + Memo.LinesInWindow do begin
+    S := Memo.Lines[i - 1];
+    k := Pos(Key, LowerCase(S));
+    while k <> 0 do begin
+      dc := Memo.BufferToDisplayPos(BufferCoord(k, i));
+      p  := Memo.RowColumnToPixels(dc);
+      T  := Copy(S, k, Length(Key));
+      k  := Pos(Key, LowerCase(S), k + Length(Key));
+
+      with Memo.Canvas do begin
+        {
+        Brush.Color := Memo.Color;
+        Font.Color  := hlSQL.IdentifierAttri.Foreground;
+        }
+        Brush.Color := clYellow;
+        Font.Color  := clRed;
+        Pen.Color   := hlSQL.IdentifierAttri.Foreground;
+
+        R.Left      := p.X - 2;
+        R.Top       := p.Y - 1;
+        R.Right     := p.X + TextWidth(T)  + 2;
+        R.Bottom    := p.Y + TextHeight(T) + 1;
+
+        Rectangle(R);
+        TextOut(p.X, p.Y, T);
+      end;
+    end;
+  end;
+end;
+
 function TMainForm.SetScreenCursor(ACursor: TCursor): TCursor;
 begin
   Result        := Screen.Cursor;
@@ -583,27 +653,60 @@ begin
   pnlProgressBar.Visible           := False;
   StatusBar.Panels[SB_PRB].Visible := False;
 
-  prbStPB.Properties.Min  := AMin;
-  prbStPB.Properties.Max  := AMax;
-  prbStPB.Position        := 0;
+  with prbStPB do begin
+    Properties.Min  := AMin;
+    Properties.Max  := AMax;
+    Position        := Properties.Min;
+  end;
 
+  with prbPB do begin
+    Properties.Min  := AMin;
+    Properties.Max  := AMax;
+    Position        := Properties.Min;
+  end;
+  {
   StatusBar.Panels[SB_PRB].Visible := True;
+  }
+  pnlProgressBar.Visible           := True;
 end;
 
 procedure TMainForm.ShowSource(const AOwner, AName, AType: string);
+
+  procedure SetTopLine(Memo: TSynMemo);
+  var
+    i, f: Integer;
+  begin
+    i := 0;
+    f := -1;
+    while (i < Memo.Lines.Count) and (f = -1) do
+      if Pos(LowerCase(FTextForSearch), LowerCase(Memo.Lines[i])) <> 0
+        then f := i
+        else i := i + 1;
+
+    if f <> -1 then
+      Memo.TopLine := Min(f + 1, Memo.Lines.Count);
+  end;
+
 var
   Memo : TSynMemo;
 begin
   pgcPackage.Visible := (AType = S_PACKAGE) or (AType = S_TYPE);
   mmoSource.Visible  := not pgcPackage.Visible;
 
+  mmoSource.Clear;
+  mmoSpec.Clear;
+  mmoBody.Clear;
+
   if (AType = S_PACKAGE) or (AType = S_TYPE)
     then Memo := mmoSpec
     else Memo := mmoSource;
 
   SourceToStrings(AOwner, AName, AType, Memo.Lines);
+  SetTopLine(Memo);
   if (AType = S_PACKAGE) or (AType = S_TYPE) then begin
     SourceToStrings(AOwner, AName, AType + ' BODY', mmoBody.Lines);
+    SetTopLine(mmoBody);
+
     pgcPackage.ActivePageIndex := 0;
 
     if mmoBody.Lines.Count = 0 then begin
@@ -613,6 +716,34 @@ begin
       pgcPackage.Visible := False;
       mmoSource.Visible  := True;
     end;
+  end;
+end;
+
+procedure TMainForm.SourceToFile(const FileName: string; const AOwner, AName, AType: string);
+
+  procedure PreprocessLines(L: TStrings);
+  var
+    i: Integer;
+  begin
+    for i := 0 to L.Count - 1 do
+      if Copy(L[i], Length(L[i]), 1) = #$A then
+        L[i] := Copy(L[i], 1, Length(L[i]) - 1);
+  end;
+
+var
+  Lines: TStrings;
+begin
+  Lines := TStringList.Create;
+  try
+    SourceToStrings(AOwner, AName, AType, Lines);
+    if (AType = S_PACKAGE) or (AType = S_TYPE) then begin
+      Lines.Add('/');
+      SourceToStrings(AOwner, AName, AType + ' BODY', Lines, False);
+    end;
+    PreprocessLines(Lines);
+    Lines.SaveToFile(FileName);
+  finally
+    FreeAndNil(Lines);
   end;
 end;
 

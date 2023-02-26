@@ -24,7 +24,6 @@ uses
 
 type
   TSelectSaveParamsForm = class(TBaseDialogForm)
-    dtrDirTree: TRzDirectoryTree;
     gbxSaveOptions: TcxGroupBox;
     chbOwnerDir: TcxCheckBox;
     chbTypeDir: TcxCheckBox;
@@ -35,6 +34,8 @@ type
     lblFileExt: TLabel;
     lblDir: TLabel;
     btnClearTextList: TcxButton;
+    gbxDirTree: TcxGroupBox;
+    dtrDirTree: TRzDirectoryTree;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure dtrDirTreeChange(Sender: TObject; Node: TTreeNode);
@@ -104,7 +105,7 @@ begin
 
   inherited;
 
-  dtrDirTree.Align := alClient;
+  gbxDirTree.Align := alClient;
   Height           := Trunc(Screen.Height * 2/3);
   Width            := Trunc(Screen.Width  * 1/3);
   edtDir.Width     := gbxSaveOptions.ClientWidth - edtDir.Left - lblDir.Left;
@@ -151,5 +152,6 @@ begin
   chbOwnerInName.Checked := R.ReadBool(S_SAVE_OPTIONS + '.' + S_OWNER_IN_NAME, chbOwnerInName.Checked);
   chbTypeInName.Checked  := R.ReadBool(S_SAVE_OPTIONS + '.' + S_TYPE_IN_NAME, chbTypeInName.Checked);
 end;
+{$WARN SYMBOL_DEPRECATED ON}
 
 end.
