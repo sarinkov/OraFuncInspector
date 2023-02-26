@@ -3,8 +3,6 @@ inherited SettingsForm: TSettingsForm
   ClientHeight = 278
   ClientWidth = 502
   Position = poOwnerFormCenter
-  ExplicitWidth = 518
-  ExplicitHeight = 317
   PixelsPerInch = 96
   TextHeight = 16
   object bvlButtonsBevel: TdxBevel
@@ -14,9 +12,6 @@ inherited SettingsForm: TSettingsForm
     Height = 10
     Align = alTop
     Shape = dxbsLineTop
-    ExplicitLeft = -33
-    ExplicitTop = 293
-    ExplicitWidth = 535
   end
   object pnlMain: TPanel
     Left = 0
@@ -136,10 +131,6 @@ inherited SettingsForm: TSettingsForm
       object pgCommon: TcxTabSheet
         Caption = #1054#1073#1097#1080#1077
         ImageIndex = 0
-        ExplicitLeft = 0
-        ExplicitTop = 0
-        ExplicitWidth = 0
-        ExplicitHeight = 0
         object lblEditorPath: TLabel
           Left = 6
           Top = 3
@@ -173,10 +164,6 @@ inherited SettingsForm: TSettingsForm
       object pgSrcArea: TcxTabSheet
         Caption = #1054#1073#1083#1072#1089#1090#1100' '#1080#1089#1093#1086#1076#1085#1086#1075#1086' '#1082#1086#1076#1072
         ImageIndex = 1
-        ExplicitLeft = 0
-        ExplicitTop = 0
-        ExplicitWidth = 0
-        ExplicitHeight = 0
         object lblFont: TLabel
           Left = 8
           Top = 3
