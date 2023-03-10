@@ -154,10 +154,6 @@
             <Form>LoginForm</Form>
             <FormType>dfm</FormType>
         </DCCReference>
-        <DCCReference Include="..\XLib\fmClassInfo.pas">
-            <Form>ClassInfoForm</Form>
-            <FormType>dfm</FormType>
-        </DCCReference>
         <DCCReference Include="fmSettings.pas">
             <Form>SettingsForm</Form>
             <FormType>dfm</FormType>
@@ -172,6 +168,14 @@
             <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="unConsts.pas"/>
+        <DCCReference Include="fmClassInfo.pas">
+            <Form>ClassInfoForm</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="fmSelectDir.pas">
+            <Form>SelectDirForm</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

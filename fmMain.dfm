@@ -53,7 +53,6 @@ inherited MainForm: TMainForm
         Align = alClient
         Properties.BeginColor = 54056
         TabOrder = 0
-        ExplicitLeft = -1
         Width = 686
       end
     end
@@ -348,10 +347,6 @@ inherited MainForm: TMainForm
           object tsSpec: TcxTabSheet
             Caption = 'Spec'
             ImageIndex = 0
-            ExplicitLeft = 0
-            ExplicitTop = 0
-            ExplicitWidth = 0
-            ExplicitHeight = 0
             object mmoSpec: TSynMemo
               Left = 8
               Top = 8
@@ -388,10 +383,6 @@ inherited MainForm: TMainForm
           object tsBody: TcxTabSheet
             Caption = 'Body'
             ImageIndex = 1
-            ExplicitLeft = 0
-            ExplicitTop = 0
-            ExplicitWidth = 0
-            ExplicitHeight = 0
             object mmoBody: TSynMemo
               Left = 12
               Top = 16
@@ -490,7 +481,6 @@ inherited MainForm: TMainForm
       Top = 3
       Align = alClient
       TabOrder = 0
-      ExplicitLeft = 0
       Width = 1078
     end
   end
@@ -505,7 +495,7 @@ inherited MainForm: TMainForm
       Hint = #1055#1086#1080#1089#1082' '#1087#1086' '#1079#1072#1076#1072#1085#1085#1099#1084' '#1087#1072#1088#1072#1084#1077#1090#1088#1072#1084
       ImageIndex = 0
       ShortCut = 16454
-      OnExecute = actRefresh
+      OnExecute = actRefreshExecute
     end
     object actSaveItemsToDisk: TAction
       Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100
@@ -1224,8 +1214,10 @@ inherited MainForm: TMainForm
       
         '           WHEN upper(src.type) like '#39'TYPE%'#39'    THEN '#39'TYPE'#39'     ' +
         '           '
-      '           ELSE upper(src.type)'
-      '         END              as type'
+      
+        '                                                ELSE upper(src.t' +
+        'ype)'
+      '         END as type'
       '    FROM all_source src'
       '   WHERE upper(src.owner) = upper(nvl(:owner, src.owner))'
       '     and upper(src.text) like '#39'%'#39' || upper(:text) || '#39'%'#39

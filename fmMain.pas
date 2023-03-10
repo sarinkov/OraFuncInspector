@@ -90,7 +90,7 @@ type
     chbTriggers: TcxCheckBox;
     btnClearTextList: TcxButton;
     procedure FormCreate(Sender: TObject);
-    procedure actRefresh(Sender: TObject);
+    procedure actRefreshExecute(Sender: TObject);
     procedure actSettingsExecute(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure dsMainDataChange(Sender: TObject; Field: TField);
@@ -119,12 +119,8 @@ type
     procedure HideProgressBar;
     procedure TextToDropDownList(const Text: string);
 
-    procedure DoRefresh;
-    procedure DoSaveItemsToDisk;
     procedure SaveSource(const AOwner, AName, AType: string);
     procedure SourceToFile(const FileName: string; const AOwner, AName, AType: string);
-    procedure DoExternalEdit;
-    procedure DoSettings;
     procedure SourceToStrings(const AOwner, AName, AType: string; Lines: TStrings; ClearLines: Boolean = True);
     procedure ShowSource(const AOwner, AName, AType: string);
     function  GetSelectedCount: Integer;
@@ -152,8 +148,19 @@ implementation
 {$R *.dfm}
 
 uses
-  Winapi.ShlObj, Winapi.ShellAPI, System.Math, SynEditTypes,
-  XHelpers, XUtils, XStrUtils, dmMain, fmLogin, fmSelectSaveParams, fmSettings, unConsts, unGlobals;
+  SynEditTypes,
+  System.Math,
+  Winapi.ShellAPI,
+  Winapi.ShlObj,
+  XHelpers,
+  XStrUtils,
+  XUtils,
+  dmMain,
+  fmLogin,
+  fmSelectSaveParams,
+  fmSettings,
+  unConsts,
+  unGlobals;
 
 const
   MAX_TEXT_ITEMS     = 25;
@@ -166,13 +173,94 @@ const
   S_INDEX            = 'Index';
 
 procedure TMainForm.actExternalEditExecute(Sender: TObject);
+
+  function  GetTempDir: string;
+  begin
+    Result := GetSpecialPath(CSIDL_MYDOCUMENTS);
+  end;
+
+var
+  TempDir : string;
+  FileName: string;
 begin
-  DoExternalEdit;
+  if AppSettings.EditorPath = '' then begin
+    MsgBox('Не указан редактор', 'В настройках не указан внешний редактор.', MB_ICONSTOP + MB_OK);
+    Exit;
+  end;
+
+  if AppSettings.TempPath <> ''
+    then TempDir := AppSettings.TempPath
+    else TempDir := GetTempDir;
+  TempDir  := IncludeTrailingPathDelimiter(TempDir);
+  FileName := TempDir + Format('%s.%s.sql', [CurOwner, CurName]);
+
+  SourceToFile(FileName, CurOwner, CurName, CurType);
+  ShellExecute(Handle, 'open', PChar('"' + AppSettings.EditorPath + '"'), PChar('"' + FileName + '"'), nil, SW_SHOWNORMAL);
 end;
 
 procedure TMainForm.actSaveItemsToDiskExecute(Sender: TObject);
+var
+  i        : Integer;
+  SelCount : Integer;
+  ACursor  : TCursor;
+
+  RowIdx   : Integer;
+  RowInfo  : TcxRowInfo;
+
+  AOwner   : string;
+  AName    : string;
+  AType    : string;
 begin
-  DoSaveItemsToDisk;
+  inherited;
+
+  if not SelectSaveParams then
+    Exit;
+
+  with tvMain.DataController do begin
+    BeginUpdate;
+
+    SelCount  := SelectedCount;
+    ACursor   := SetScreenCursor(crHourGlass);
+    ShowProgressBar(Min(1, SelCount), SelCount);
+    try
+      for i := 0 to SelCount - 1 do begin
+        Application.ProcessMessages;
+
+        RowIdx  := GetSelectedRowIndex(i);
+        RowInfo := GetRowInfo(RowIdx);
+
+        if RowInfo.Level >= Groups.GroupingItemCount then begin
+          AOwner := GetStrFieldValue(tvMain, 'owner', RowInfo.RecordIndex);
+          AType  := GetStrFieldValue(tvMain, 'type',  RowInfo.RecordIndex);
+          AName  := GetStrFieldValue(tvMain, 'name',  RowInfo.RecordIndex);
+
+          try
+            SaveSource(AOwner, AName, AType);
+          except
+            on E: Exception do begin
+              MsgBox('Ошибка', 'Ошибка сохранения:'#13 + E.Message, MB_OK + MB_ICONERROR);
+              Exit;
+            end;
+          end;
+
+          with prbStPB do begin
+            Position        := Position + 1;
+            {
+            Properties.Text := Format('%s.%s (%d%%)', [AOwner, AName, Trunc((i + 1) * 100 / SelCount)]);
+            }
+          end;
+          with prbPB do begin
+              Position        := Position + 1;
+          end;
+        end;
+      end;
+    finally
+      HideProgressBar;
+      SetScreenCursor(ACursor);
+
+      EndUpdate;
+    end;
+  end;
 end;
 
 procedure TMainForm.ActMgrUpdate(Action: TBasicAction; var Handled: Boolean);
@@ -182,20 +270,50 @@ begin
   actExternalEdit.Enabled    := actSaveItemsToDisk.Enabled and ((mmoSpec.Text <> '') or (mmoSource.Text <> ''));
 end;
 
-procedure TMainForm.actRefresh(Sender: TObject);
+procedure TMainForm.actRefreshExecute(Sender: TObject);
 begin
-  inherited;
-
   TextToDropDownList(Text);
-  DoRefresh;
+  FTextForSearch := Text;
+
+  with qryMain do begin
+    DisableControls;
+
+    gbxSource.Caption  := '';
+    mmoSource.Visible  := False;
+    pgcPackage.Visible := False;
+
+    Close;
+    Params.ClearValues();
+    ParamByName('owner').AsString           := OwnerName;
+    ParamByName('text').AsString            := Self.Text;
+    ParamByName('p_functions').AsInteger    := ord(chbFunctions.Checked);
+    ParamByName('p_procedures').AsInteger   := ord(chbProcedures.Checked);
+    ParamByName('p_triggers').AsInteger     := ord(chbTriggers.Checked);
+    ParamByName('p_packages').AsInteger     := ord(chbPackages.Checked);
+    ParamByName('p_types').AsInteger        := ord(chbTypes.Checked);
+    ParamByName('p_java_sources').AsInteger := ord(chbJavaSources.Checked);
+    try
+      Open;
+    except
+      on E: Exception do
+        MsgBox('Ошибка выполнения', 'Не удалось получить список объектов:'#13 + E.Message, MB_OK + MB_ICONERROR);
+    end;
+
+    EnableControls;
+  end;
 end;
 
 procedure TMainForm.actSettingsExecute(Sender: TObject);
+var
+  F: TSettingsForm;
 begin
-  inherited;
-
-  DoSettings;
-  SaveFormParams;
+  F := TSettingsForm.Create(Self);
+  try
+    F.ShowModal;
+    SaveFormParams;
+  finally
+    FreeAndNil(F);
+  end;
 end;
 
 procedure TMainForm.btnClearTextListClick(Sender: TObject);
@@ -210,18 +328,6 @@ begin
   if Key = #13 then begin
     actSearch.Execute;
     Key := #0;
-  end;
-end;
-
-procedure TMainForm.DoSettings;
-var
-  F: TSettingsForm;
-begin
-  F := TSettingsForm.Create(Self);
-  try
-    F.ShowModal;
-  finally
-    FreeAndNil(F);
   end;
 end;
 
@@ -272,7 +378,7 @@ begin
   if cbxText.ItemIndex = -1 then
     cbxText.Text := '';
 
-  DoRefresh;
+  actRefreshExecute(nil);
 end;
 
 procedure TMainForm.FormResize(Sender: TObject);
@@ -340,127 +446,6 @@ begin
   inherited;
 
   LoadOwners;
-end;
-
-procedure TMainForm.DoRefresh;
-begin
-  TextToDropDownList(Text);
-  FTextForSearch := Text;
-
-  with qryMain do begin
-    DisableControls;
-
-    gbxSource.Caption  := '';
-    mmoSource.Visible  := False;
-    pgcPackage.Visible := False;
-
-    Close;
-    Params.ClearValues();
-    ParamByName('owner').AsString           := OwnerName;
-    ParamByName('text').AsString            := Self.Text;
-    ParamByName('p_functions').AsInteger    := ord(chbFunctions.Checked);
-    ParamByName('p_procedures').AsInteger   := ord(chbProcedures.Checked);
-    ParamByName('p_triggers').AsInteger     := ord(chbTriggers.Checked);
-    ParamByName('p_packages').AsInteger     := ord(chbPackages.Checked);
-    ParamByName('p_types').AsInteger        := ord(chbTypes.Checked);
-    ParamByName('p_java_sources').AsInteger := ord(chbJavaSources.Checked);
-    try
-      Open;
-    except
-      on E: Exception do
-        MsgBox('Ошибка выполненния', E.Message, MB_OK + MB_ICONERROR);
-    end;
-
-    EnableControls;
-  end;
-end;
-
-procedure TMainForm.DoExternalEdit;
-
-  function  GetTempDir: string;
-  var
-    Path: array [0..255] of char;
-  begin
-    SHGetSpecialFolderPath(0, @Path[0], CSIDL_PERSONAL, False);
-    Result := IncludeTrailingPathDelimiter(Path);
-  end;
-
-var
-  FileName: string;
-begin
-  if AppSettings.EditorPath = '' then begin
-    MsgBox('Не указан редактор', 'В настройках не указан внешний редактор.', MB_ICONSTOP + MB_OK);
-    Exit;
-  end;
-
-  FileName := GetTempDir + Format('%s.%s.sql', [CurOwner, CurName]);
-  SourceToFile(FileName, CurOwner, CurName, CurType);
-  ShellExecute(Handle, 'open', PChar('"' + AppSettings.EditorPath + '"'), PChar('"' + FileName + '"'), nil, SW_SHOWNORMAL);
-end;
-
-procedure TMainForm.DoSaveItemsToDisk;
-var
-  i        : Integer;
-  SelCount : Integer;
-  ACursor  : TCursor;
-
-  RowIdx   : Integer;
-  RowInfo  : TcxRowInfo;
-
-  AOwner   : string;
-  AName    : string;
-  AType    : string;
-begin
-  inherited;
-
-  if not SelectSaveParams then
-    Exit;
-
-  with tvMain.DataController do begin
-    BeginUpdate;
-
-    SelCount  := SelectedCount;
-    ACursor   := SetScreenCursor(crHourGlass);
-    ShowProgressBar(Min(1, SelCount), SelCount);
-    try
-      for i := 0 to SelCount - 1 do begin
-        Application.ProcessMessages;
-
-        RowIdx  := GetSelectedRowIndex(i);
-        RowInfo := GetRowInfo(RowIdx);
-
-        if RowInfo.Level >= Groups.GroupingItemCount then begin
-          AOwner := GetStrFieldValue(tvMain, 'owner', RowInfo.RecordIndex);
-          AType  := GetStrFieldValue(tvMain, 'type',  RowInfo.RecordIndex);
-          AName  := GetStrFieldValue(tvMain, 'name',  RowInfo.RecordIndex);
-
-          try
-            SaveSource(AOwner, AName, AType);
-          except
-            on E: Exception do begin
-              MsgBox('Ошибка', 'Ошибка сохранения:'#13 + E.Message, MB_OK + MB_ICONERROR);
-              Exit;
-            end;
-          end;
-
-          with prbStPB do begin
-            Position        := Position + 1;
-            {
-            Properties.Text := Format('%s.%s (%d%%)', [AOwner, AName, Trunc((i + 1) * 100 / SelCount)]);
-            }
-          end;
-          with prbPB do begin
-              Position        := Position + 1;
-          end;
-        end;
-      end;
-    finally
-      HideProgressBar;
-      SetScreenCursor(ACursor);
-
-      EndUpdate;
-    end;
-  end;
 end;
 
 procedure TMainForm.SaveSource(const AOwner, AName, AType: string);
@@ -537,6 +522,7 @@ begin
     end;
 
   R.WriteString(S_EDITOR_PATH, AppSettings.EditorPath);
+  R.WriteString(S_TEMP_PATH, AppSettings.TempPath);
   SaveSourceParams;
 end;
 
@@ -583,7 +569,8 @@ begin
       Columns[i].Index := R.ReadInteger(Columns[i].Name + ',' + S_INDEX, Columns[i].Index);
     end;
 
-  AppSettings.EditorPath := R.ReadString(S_EDITOR_PATH, AppSettings.EditorPath);
+  AppSettings.EditorPath := R.ReadString(S_EDITOR_PATH, '');
+  AppSettings.TempPath   := R.ReadString(S_TEMP_PATH, '');
   LoadSourceParams;
 end;
 

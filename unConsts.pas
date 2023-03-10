@@ -45,11 +45,12 @@ const
   S_FONT_SIZE          = 'FontSize';
   S_LINE_NUMBERS       = 'LineNumbers';
   S_SQL_SYNTAX         = 'SQLSyntax';
-  S_EDITOR_PATH        = 'EditorPath';
 
   S_OBJECTS_TYPES      = 'ObjectsTypes';
 
   S_APP_SETTINGS       = 'AppSettings';
+  S_EDITOR_PATH        = 'EditorPath';
+  S_TEMP_PATH          = 'TempPath';
 
   S_SAVE_OPTIONS       = S_APP_SETTINGS + '.SaveOptions';
   S_DIRECTORY          = 'Directory';

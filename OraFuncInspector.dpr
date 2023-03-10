@@ -12,12 +12,13 @@ uses
   dmMain in 'dmMain.pas' {MainDataModule: TDataModule},
   fmBaseLogin in 'fmBaseLogin.pas' {BaseLoginForm},
   fmLogin in 'fmLogin.pas' {LoginForm},
-  fmClassInfo in '..\XLib\fmClassInfo.pas' {ClassInfoForm},
   fmSettings in 'fmSettings.pas' {SettingsForm},
   fmAttr in 'fmAttr.pas' {AttrForm},
   unGlobals in 'unGlobals.pas',
   fmSelectSaveParams in 'fmSelectSaveParams.pas' {SelectSaveParamsForm},
-  unConsts in 'unConsts.pas';
+  unConsts in 'unConsts.pas',
+  fmClassInfo in 'fmClassInfo.pas' {ClassInfoForm},
+  fmSelectDir in 'fmSelectDir.pas' {SelectDirForm};
 
 {$R *.res}
 

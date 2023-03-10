@@ -9,6 +9,7 @@ type
   PAppSettings = ^TAppSettings;
   TAppSettings = record
     EditorPath  : string;
+    TempPath    : string;
     SaveOptions : record
       Dir             : string;
       Ext             : string;
@@ -66,6 +67,7 @@ begin
 end;
 
 initialization
+  ReportMemoryLeaksOnShutdown := True;
   FillChar(AppSettings, SizeOf(AppSettings), #0);
 
 end.

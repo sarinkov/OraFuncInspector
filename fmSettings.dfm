@@ -1,14 +1,18 @@
 inherited SettingsForm: TSettingsForm
+  ActiveControl = edtEditorPath
+  BorderStyle = bsDialog
   Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080
-  ClientHeight = 278
-  ClientWidth = 502
+  ClientHeight = 288
+  ClientWidth = 513
   Position = poOwnerFormCenter
+  ExplicitWidth = 519
+  ExplicitHeight = 317
   PixelsPerInch = 96
   TextHeight = 16
   object bvlButtonsBevel: TdxBevel
     Left = 0
     Top = 241
-    Width = 502
+    Width = 513
     Height = 10
     Align = alTop
     Shape = dxbsLineTop
@@ -16,7 +20,7 @@ inherited SettingsForm: TSettingsForm
   object pnlMain: TPanel
     Left = 0
     Top = 0
-    Width = 502
+    Width = 513
     Height = 241
     Align = alTop
     BevelOuter = bvNone
@@ -115,14 +119,14 @@ inherited SettingsForm: TSettingsForm
     end
     object pgcPages: TcxPageControl
       AlignWithMargins = True
-      Left = 62
+      Left = 73
       Top = 3
       Width = 437
       Height = 235
       Align = alRight
       Focusable = False
       TabOrder = 0
-      Properties.ActivePage = pgSrcArea
+      Properties.ActivePage = pgCommon
       Properties.CustomButtons.Buttons = <>
       ClientRectBottom = 233
       ClientRectLeft = 2
@@ -140,9 +144,17 @@ inherited SettingsForm: TSettingsForm
           FocusControl = edtEditorPath
           WordWrap = True
         end
+        object lblTempPath: TLabel
+          Left = 6
+          Top = 49
+          Width = 194
+          Height = 16
+          Caption = #1050#1072#1090#1072#1083#1086#1075' '#1076#1083#1103' '#1074#1088#1077#1084#1077#1085#1085#1099#1093' '#1092#1072#1081#1083#1086#1074':'
+          FocusControl = edtTempPath
+        end
         object edtEditorPath: TcxButtonEdit
-          Left = 73
-          Top = 3
+          Left = 6
+          Top = 25
           ParentShowHint = False
           Properties.Buttons = <
             item
@@ -158,7 +170,23 @@ inherited SettingsForm: TSettingsForm
           StyleHot.LookAndFeel.NativeStyle = False
           TabOrder = 0
           Text = 'edtEditorPath'
-          Width = 354
+          Width = 424
+        end
+        object edtTempPath: TcxButtonEdit
+          Left = 6
+          Top = 65
+          ParentShowHint = False
+          Properties.Buttons = <
+            item
+              Default = True
+              Kind = bkEllipsis
+            end>
+          Properties.OnButtonClick = edtTempPathPropertiesButtonClick
+          Properties.OnChange = edtTempPathPropertiesChange
+          ShowHint = True
+          TabOrder = 1
+          Text = 'edtTempPath'
+          Width = 424
         end
       end
       object pgSrcArea: TcxTabSheet
@@ -458,8 +486,8 @@ inherited SettingsForm: TSettingsForm
     end
   end
   object btnCancel: TcxButton
-    Left = 414
-    Top = 249
+    Left = 425
+    Top = 259
     Width = 80
     Height = 25
     Anchors = [akRight, akBottom]
@@ -502,8 +530,8 @@ inherited SettingsForm: TSettingsForm
     TabOrder = 1
   end
   object btnOk: TcxButton
-    Left = 328
-    Top = 249
+    Left = 339
+    Top = 259
     Width = 80
     Height = 25
     Anchors = [akRight, akBottom]
@@ -547,7 +575,7 @@ inherited SettingsForm: TSettingsForm
     TabOrder = 2
   end
   object dlgOpen: TOpenDialog
-    Left = 400
-    Top = 8
+    Left = 12
+    Top = 228
   end
 end

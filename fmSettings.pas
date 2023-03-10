@@ -22,7 +22,7 @@ uses
   dxSkinSevenClassic, dxSkinSharp, dxSkinSharpPlus, dxSkinSilver, dxSkinSpringtime, dxSkinStardust, dxSkinSummer2008,
   dxSkinTheAsphaltWorld, dxSkinTheBezier, dxSkinsDefaultPainters, dxSkinValentine, dxSkinVisualStudio2013Blue,
   dxSkinVisualStudio2013Dark, dxSkinVisualStudio2013Light, dxSkinVS2010, dxSkinWhiteprint, dxSkinXmas2008Blue, dxBevel,
-  SynEdit, SynMemo;
+  SynEdit, SynMemo, System.Actions, Vcl.ActnList, Vcl.PlatformDefaultStyleActnCtrls, Vcl.ActnMan;
 
 type
   TSettingsForm = class(TBaseForm)
@@ -51,6 +51,8 @@ type
     btnCancel: TcxButton;
     btnOk: TcxButton;
     bvlButtonsBevel: TdxBevel;
+    edtTempPath: TcxButtonEdit;
+    lblTempPath: TLabel;
     procedure FormCreate(Sender: TObject);
     procedure edtEditorPathPropertiesButtonClick(Sender: TObject;
       AButtonIndex: Integer);
@@ -58,6 +60,8 @@ type
     procedure SelectAttributes(Sender: TObject; AButtonIndex: Integer);
     procedure edtEditorPathPropertiesChange(Sender: TObject);
     procedure AttrDblClick(Sender: TObject);
+    procedure edtTempPathPropertiesChange(Sender: TObject);
+    procedure edtTempPathPropertiesButtonClick(Sender: TObject; AButtonIndex: Integer);
   private
     procedure SetBGColor(C: TColor);
 
@@ -71,7 +75,10 @@ implementation
 {$R *.dfm}
 
 uses
-  unGlobals, fmMain, fmAttr;
+  fmMain,
+  fmAttr,
+  fmSelectDir,
+  unGlobals;
 
 procedure TSettingsForm.AttrDblClick(Sender: TObject);
 begin
@@ -98,8 +105,17 @@ end;
 
 procedure TSettingsForm.edtEditorPathPropertiesChange(Sender: TObject);
 begin
-  inherited;
   edtEditorPath.Hint := edtEditorPath.Text;
+end;
+
+procedure TSettingsForm.edtTempPathPropertiesButtonClick(Sender: TObject; AButtonIndex: Integer);
+begin
+  edtTempPath.Text := SelectDirectory(edtTempPath.Text);
+end;
+
+procedure TSettingsForm.edtTempPathPropertiesChange(Sender: TObject);
+begin
+  edtTempPath.Hint := edtTempPath.Text;
 end;
 
 procedure TSettingsForm.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -118,6 +134,7 @@ begin
   inherited;
   if ModalResult = mrOk then begin
     AppSettings.EditorPath := edtEditorPath.Text;
+    AppSettings.TempPath   := edtTempPath.Text;
 
     SetMemoParams(MainForm.mmoSource);
     SetMemoParams(MainForm.mmoSpec);
@@ -146,6 +163,7 @@ begin
   pgcPages.ActivePage       := pgCommon;
 
   edtEditorPath.Text        := AppSettings.EditorPath;
+  edtTempPath.Text          := AppSettings.TempPath;
   with MainForm do begin
     cbbFontName.Text        := mmoSource.Font.Name;
     edtFontSize.Value       := mmoSource.Font.Size;

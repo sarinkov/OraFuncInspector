@@ -59,7 +59,8 @@ implementation
 {$R *.dfm}
 
 uses
-  XUtils;
+  XUtils,
+  fmClassInfo;
 
 constructor TBaseForm.Create(AOwner: TComponent);
 begin
